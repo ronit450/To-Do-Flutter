@@ -2,6 +2,8 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:to_do_ap/Database/data.dart';
 import 'package:to_do_ap/components/dialogue_box.dart';
 import 'package:to_do_ap/components/to_do_tile.dart';
 
@@ -13,28 +15,39 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // Object of Database
+
+  ToDo_Data _data = ToDo_Data();
   final _controller = TextEditingController();
+  final _mybox = Hive.box('my_to_do_list');
 
-  // List of all tasks to be done
+  @override
+  void initState() {
+    // Check if this is the first time opening the app
+    if (_mybox.get('all_tasks') == null) {
+      _data.createData();
+      _data.updateData();
+    } else {
+      _data.loadData();
+    }
 
-  List all_tasks = [
-    ["task1", false],
-    ["task2", false],
-    ["task3", false],
-  ];
+    super.initState();
+  }
 
   void checkBox_tapped(bool? currentVal, int index) {
     setState(() {
-      all_tasks[index][1] = !all_tasks[index][1];
+      _data.all_tasks[index][1] = !_data.all_tasks[index][1];
     });
+    _data.updateData();
   }
 
   void save_tasks() {
     setState(() {
-      all_tasks.add([_controller.text, false]);
+      _data.all_tasks.add([_controller.text, false]);
       _controller.clear();
     });
     Navigator.of(context).pop();
+    _data.updateData();
   }
 
   void cancel_tasks() {
@@ -43,8 +56,9 @@ class _HomePageState extends State<HomePage> {
 
   void del_task(int index) {
     setState(() {
-      all_tasks.removeAt(index);
+      _data.all_tasks.removeAt(index);
     });
+    _data.updateData();
   }
 
   void new_task() {
@@ -80,12 +94,12 @@ class _HomePageState extends State<HomePage> {
           //       task_completed: false,
           //       onChanged: (bool? value) {}),
           // ],
-          itemCount: all_tasks.length,
+          itemCount: _data.all_tasks.length,
           itemBuilder: (context, index) {
             return to_do_tile(
                 del_task: (context) => del_task(index),
-                task_name: all_tasks[index][0],
-                task_completed: all_tasks[index][1],
+                task_name: _data.all_tasks[index][0],
+                task_completed: _data.all_tasks[index][1],
                 onChanged: (value) => checkBox_tapped(value, index));
           }),
     );
